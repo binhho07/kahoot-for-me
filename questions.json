@@ -1,0 +1,33 @@
+{
+  "title": "Sample quiz",
+  "questions": [
+    {
+      "question": "What is 2 x 2?",
+      "options": ["4", "2", "8", "6"],
+      "answer": "A"
+    },
+    {
+      "question": "What is the time complexity of binary search on a sorted array of n elements?",
+      "options": ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+      "answer": "B",
+      "explanation": "Each comparison halves the remaining search range."
+    },
+    {
+      "question": "What does this print?\n```cpp\nint x = 5;\nint y = x++ + 2;\ncout << x << \" \" << y;\n```",
+      "options": ["6 8", "5 7", "6 7", "5 8"],
+      "answer": "C",
+      "explanation": "`x++` returns the old value (5), so `y = 7`, and then `x` becomes 6."
+    },
+    {
+      "question": "Which data structure is LIFO (last in, first out)?",
+      "options": ["Queue", "Heap", "Hash table", "Stack"],
+      "answer": "D"
+    },
+    {
+      "question": "A hash table lookup is always O(1), even in the worst case.",
+      "options": ["True", "False"],
+      "answer": "B",
+      "explanation": "It is O(1) on **average**, but O(n) in the worst case when many keys collide."
+    }
+  ]
+}

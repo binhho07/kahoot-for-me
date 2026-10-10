@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Practice</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#f3f4f8; --card:#ffffff; --text:#1a1c23; --muted:#686e80; --line:#e2e4eb; --soft:#eef0f5;
+  --accent:#4f46e5; --ok:#16a34a; --bad:#dc2626;
+  --o1:#e0435a; --o2:#2f6bd8; --o3:#e9a514; --o4:#1b9a5e; --o5:#8b5cf6; --o6:#0f97a6;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 6px 20px rgba(16,24,40,.06);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1116; --card:#181b22; --text:#e8eaf0; --muted:#9097a8; --line:#272b35; --soft:#20242d;
+    --accent:#818cf8; --ok:#22c55e; --bad:#f05252; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top-inner{max-width:880px;margin:0 auto;padding:14px 16px 12px}
+.title-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px 16px;flex-wrap:wrap}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.score{color:var(--muted);font-size:14px;display:flex;gap:8px;flex-wrap:wrap}
+.score b{color:var(--text)}
+.progress{height:6px;background:var(--soft);border-radius:99px;margin:10px 0 12px;overflow:hidden}
+.progress span{display:block;height:100%;width:0;background:var(--accent);border-radius:inherit;transition:width .3s}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.seg .n{font-weight:500;opacity:.7;margin-left:5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:7px 13px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn:focus-visible,.seg button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- layout ---------- */
+main{max-width:880px;margin:0 auto;padding:20px 16px 80px}
+#list{display:grid;gap:16px}
+.none{color:var(--muted);text-align:center;padding:40px 0}
+
+/* ---------- question card ---------- */
+.q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);scroll-margin-top:140px}
+.q.right{box-shadow:inset 4px 0 0 var(--ok),var(--shadow)}
+.q.wrong{box-shadow:inset 4px 0 0 var(--bad),var(--shadow)}
+.q-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;min-height:22px}
+.q-num{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.q-badge{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px}
+.q-badge.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.q-badge.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.q-text{font-size:18px;font-weight:600;margin-bottom:14px;overflow-wrap:anywhere}
+
+code{font-family:var(--mono);font-size:.9em;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre{font:14px/1.45 var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;overflow-x:auto;white-space:pre;text-align:left}
+pre code{background:none;padding:0;font-size:inherit}
+.q-text pre{font-weight:400}
+
+/* ---------- options ---------- */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:62px;padding:12px 14px;
+  background:var(--c);color:#fff;border:0;border-radius:12px;text-align:left;font-weight:600;cursor:pointer;
+  box-shadow:0 3px 0 rgba(0,0,0,.2);transition:transform .08s,opacity .2s,filter .2s,box-shadow .08s}
+.opt:hover{filter:brightness(1.07)}
+.opt:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+.opt:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.opt.dark{color:#2b1d00}
+.letter{flex:none;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.24);display:grid;place-items:center;font-weight:800}
+.opt.dark .letter{background:rgba(0,0,0,.12)}
+.otext{flex:1;min-width:0;overflow-wrap:anywhere}
+.opt code,.opt pre{background:rgba(0,0,0,.18);border:0;color:inherit}
+.opt.dark code,.opt.dark pre{background:rgba(0,0,0,.1)}
+.opt pre{margin:4px 0;font-weight:500}
+.mark{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:900;background:#fff;color:var(--ok)}
+.mark:empty{display:none}
+.opt.is-wrong .mark{color:var(--bad)}
+
+/* picked, before reveal */
+.q.picked .opt:not(.is-picked){opacity:.5}
+.opt.is-picked{opacity:1;outline:3px solid var(--text);outline-offset:3px}
+/* after reveal */
+.q.revealed .opt{cursor:default;transform:none}
+.q.revealed .opt:hover{filter:none}
+.q.revealed .opt:not(.is-correct):not(.is-picked){opacity:.22;filter:grayscale(.8)}
+.q.revealed .opt.is-correct{opacity:1;outline:3px solid var(--ok);outline-offset:3px}
+.q.revealed .opt.is-wrong{opacity:.6;outline:3px solid var(--bad);outline-offset:3px}
+
+.result{margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.q.right .result{background:color-mix(in srgb,var(--ok) 10%,var(--card))}
+.q.wrong .result{background:color-mix(in srgb,var(--bad) 9%,var(--card))}
+.verdict{font-weight:700}
+.q.right .verdict{color:var(--ok)}
+.q.wrong .verdict{color:var(--bad)}
+.expl{margin-top:4px;overflow-wrap:anywhere}
+.q-foot{display:flex;align-items:center;gap:12px;margin-top:16px}
+.hint{font-size:14px;color:var(--muted)}
+
+/* ---------- loader ---------- */
+.loader{background:var(--card);border:2px dashed var(--line);border-radius:18px;padding:36px 22px;text-align:center}
+.loader h2{margin:0 0 6px;font-size:22px}
+.loader p{margin:0 0 18px;color:var(--muted)}
+.loader-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.loader-btns .btn{padding:10px 16px;font-size:15px}
+.loader details{text-align:left;margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
+.loader summary{cursor:pointer;font-weight:600}
+.loader ul{color:var(--muted);font-size:14px;padding-left:20px;margin:8px 0 0}
+.err{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent);padding:10px 12px;border-radius:10px;text-align:left;font-size:14px;margin:16px 0 0;overflow-wrap:anywhere}
+.link{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;margin-top:18px;padding:4px}
+
+/* ---------- drop overlay ---------- */
+#drop{position:fixed;inset:12px;z-index:20;display:none;place-items:center;border:3px dashed var(--accent);border-radius:20px;
+  background:color-mix(in srgb,var(--accent) 14%,var(--bg));font-size:22px;font-weight:700;color:var(--accent);pointer-events:none}
+body.dragging #drop{display:grid}
+
+/* ---------- paste dialog ---------- */
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;background:var(--card);color:var(--text);width:min(680px,calc(100% - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:20px}
+.dlg h3{margin:0 0 4px}
+.dlg p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.dlg textarea{width:100%;height:320px;resize:vertical;font:13px/1.45 var(--mono);background:var(--soft);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
+.dlg-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="title-row">
+      <h1 id="title">Quiz Practice</h1>
+      <div class="score" id="score"></div>
+    </div>
+    <div id="quizUI" hidden>
+      <div class="progress"><span id="bar"></span></div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Filter questions">
+          <button type="button" data-filter="all" class="on">All</button>
+          <button type="button" data-filter="todo">To do<span class="n" id="nTodo"></span></button>
+          <button type="button" data-filter="missed">Missed<span class="n" id="nMissed"></span></button>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" id="btnShuffle" title="Shuffle question order">Shuffle</button>
+          <button type="button" class="btn" id="btnReset" title="Clear all answers and restore original order">Reset</button>
+          <button type="button" class="btn" id="btnLoad">Load new</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="loader" id="loader" hidden>
+    <h2>Load your questions</h2>
+    <p>Choose a <code>.json</code> file, drop one anywhere on this page, or paste the JSON.</p>
+    <div class="loader-btns">
+      <button type="button" class="btn primary" id="btnPick">Choose JSON file</button>
+      <button type="button" class="btn" id="btnPaste">Paste JSON</button>
+      <button type="button" class="btn" id="btnSample">Try a sample</button>
+    </div>
+    <p class="err" id="err" hidden></p>
+    <details>
+      <summary>File format</summary>
+<pre>{
+  "title": "My exam review",
+  "questions": [
+    {
+      "question": "What is 2 x 2?",
+      "options": ["2", "4", "6", "8"],
+      "answer": "B",
+      "explanation": "Optional. Shown after you reveal."
+    }
+  ]
+}</pre>
+      <ul>
+        <li><b>answer</b>: the letter of the right option (A, B, C, D…). The exact option text also works.</li>
+        <li>2 to 8 options per question; 4 is the usual.</li>
+        <li><b>explanation</b> is optional.</li>
+        <li>Use <code>`backticks`</code> for inline code and <code>```</code> fences for code blocks, inside the strings (write line breaks as <code>\n</code>).</li>
+      </ul>
+    </details>
+    <button type="button" class="link" id="btnBack" hidden>← Back to current quiz</button>
+  </section>
+
+  <div id="list" hidden></div>
+  <p class="none" id="filterEmpty" hidden></p>
+</main>
+
+<input type="file" id="file" accept=".json,application/json,text/plain" hidden>
+<div id="drop">Drop your JSON file</div>
+
+<dialog id="pasteDlg">
+  <form method="dialog" class="dlg">
+    <h3>Paste your questions</h3>
+    <p>Paste the whole JSON. Code fences (<code>```json</code>) around it are fine.</p>
+    <textarea id="pasteBox" spellcheck="false" placeholder='{ "title": "...", "questions": [ ... ] }'></textarea>
+    <p class="err" id="pasteErr" hidden></p>
+    <div class="dlg-btns">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button type="button" class="btn primary" id="pasteGo">Load</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const COLORS = ['--o1', '--o2', '--o3', '--o4', '--o5', '--o6'];
+  const LETTERS = 'ABCDEFGH';
+  const KEY = 'quiz-practice:v1';
+
+  let quiz = null;      // { title, questions:[{ id, num, text, options:[{ text, oi, correct }], explanation }] }
+  let state = {};       // questionId -> { picked: original option index | null, revealed: bool }
+  let filter = 'all';
+
+  const SAMPLE = {
+    title: 'Sample quiz',
+    questions: [
+      { question: 'What is 2 x 2?', options: ['4', '2', '8', '6'], answer: 'A' },
+      { question: 'What is the time complexity of binary search on a sorted array of n elements?',
+        options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'], answer: 'B',
+        explanation: 'Each comparison halves the remaining search range.' },
+      { question: 'What does this print?\n```cpp\nint x = 5;\nint y = x++ + 2;\ncout << x << " " << y;\n```',
+        options: ['6 8', '5 7', '6 7', '5 8'], answer: 'C',
+        explanation: '`x++` returns the old value (5), so `y = 7`, and then `x` becomes 6.' },
+      { question: 'Which data structure is LIFO (last in, first out)?',
+        options: ['Queue', 'Heap', 'Hash table', 'Stack'], answer: 'D' },
+      { question: 'A hash table lookup is always O(1), even in the worst case.',
+        options: ['True', 'False'], answer: 'B',
+        explanation: 'It is O(1) on **average**, but O(n) in the worst case when many keys collide.' }
+    ]
+  };
+
+  /* ---------- text rendering (safe: everything is escaped) ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function inline(s) {
+    return s.split(/(`[^`\n]+`)/).map((seg, i) => i % 2
+      ? '<code>' + esc(seg.slice(1, -1)) + '</code>'
+      : esc(seg).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')
+    ).join('');
+  }
+  function rich(src) {
+    const parts = String(src).split('```');
+    let out = '';
+    parts.forEach((p, i) => {
+      if (i % 2) {
+        const code = p.replace(/^[\w+#.-]*[ \t]*\r?\n/, '').replace(/\s+$/, '');
+        out += '<pre><code>' + esc(code) + '</code></pre>';
+      } else {
+        if (i > 0) p = p.replace(/^\r?\n/, '');
+        if (i < parts.length - 1) p = p.replace(/\r?\n$/, '');
+        out += inline(p);
+      }
+    });
+    return out;
+  }
+
+  /* ---------- parsing & validation ---------- */
+  function parseLenient(text) {
+    const t = String(text).trim()
+      .replace(/^```[a-zA-Z]*[ \t]*\r?\n/, '')
+      .replace(/\r?\n?```\s*$/, '');
+    try { return JSON.parse(t); }
+    catch (e1) {
+      try { return JSON.parse(t.replace(/,\s*([\]}])/g, '$1')); } // forgive trailing commas
+      catch (e2) { throw e1; }
+    }
+  }
+
+  function resolveAnswer(ans, opts, n) {
+    if (ans === undefined || ans === null || String(ans).trim() === '')
+      throw new Error(`Question ${n} is missing "answer".`);
+    if (typeof ans === 'number') {
+      if (!Number.isInteger(ans) || ans < 1 || ans > opts.length)
+        throw new Error(`Question ${n}: answer ${ans} is out of range. Use a letter like "B".`);
+      const textMatch = opts.findIndex(o => o.trim() === String(ans));
+      if (textMatch >= 0 && textMatch !== ans - 1)
+        throw new Error(`Question ${n}: answer ${ans} is ambiguous (it's also the text of an option). Use a letter like "B".`);
+      return ans - 1;
+    }
+    const s = String(ans).trim();
+    if (/^[A-Ha-h]$/.test(s)) {
+      const i = s.toUpperCase().charCodeAt(0) - 65;
+      if (i < opts.length) return i;
+    }
+    let i = opts.findIndex(o => o.trim() === s);
+    if (i >= 0) return i;
+    i = opts.findIndex(o => o.trim().toLowerCase() === s.toLowerCase());
+    if (i >= 0) return i;
+    const m = s.match(/^(?:op|option)\s*(\d+)$/i);
+    if (m && +m[1] >= 1 && +m[1] <= opts.length) return +m[1] - 1;
+    throw new Error(`Question ${n}: answer "${s}" doesn't match any option. Use a letter like "B".`);
+  }
+
+  function normalize(raw) {
+    let title = 'Practice quiz', list = raw;
+    if (!Array.isArray(raw)) {
+      if (raw && Array.isArray(raw.questions)) {
+        list = raw.questions;
+        if (raw.title) title = String(raw.title);
+      } else {
+        throw new Error('Expected a "questions" list (or just a list of questions).');
+      }
+    }
+    if (!list.length) throw new Error('The questions list is empty.');
+
+    const questions = list.map((q, idx) => {
+      const n = idx + 1;
+      if (!q || typeof q !== 'object' || Array.isArray(q)) throw new Error(`Question ${n} isn't an object { ... }.`);
+      const text = q.question ?? q.q ?? q.text;
+      if (text == null || String(text).trim() === '') throw new Error(`Question ${n} is missing "question".`);
+
+      let opts = Array.isArray(q.options) ? q.options : Array.isArray(q.choices) ? q.choices : null;
+      if (!opts) {
+        opts = [];
+        for (let k = 1; k <= 8; k++) {
+          const v = q['op' + k] ?? q['option' + k];
+          if (v != null) opts.push(v);
+        }
+      }
+      opts = opts.map(o => String(o));
+      if (opts.length < 2) throw new Error(`Question ${n} needs at least 2 options.`);
+      if (opts.length > 8) throw new Error(`Question ${n} has more than 8 options.`);
+
+      const correctIdx = resolveAnswer(q.answer, opts, n);
+      const ex = q.explanation ?? q.explain ?? q.why ?? '';
+      return {
+        id: 'q' + n, num: n, text: String(text),
+        options: opts.map((t, oi) => ({ text: t, oi, correct: oi === correctIdx })),
+        explanation: ex == null ? '' : String(ex)
+      };
+    });
+    return { title, questions };
+  }
+
+  /* ---------- persistence ---------- */
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ quiz, state })); } catch (e) {}
+  }
+  function restore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (s && s.quiz && Array.isArray(s.quiz.questions) && s.quiz.questions.length) {
+        quiz = s.quiz; state = s.state || {};
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /* ---------- loading ---------- */
+  function tryLoad(text) {
+    let raw;
+    try { raw = parseLenient(text); }
+    catch (e) { return `That isn't valid JSON (${e.message}). Check for a missing comma, bracket or quote.`; }
+    try { quiz = normalize(raw); }
+    catch (e) { return e.message; }
+    state = {}; filter = 'all';
+    save(); showQuiz();
+    return null;
+  }
+  function showErr(el, msg) { el.textContent = msg; el.hidden = false; }
+
+  async function readFile(f) {
+    let text;
+    try { text = await f.text(); }
+    catch (e) { showLoader(); showErr($('err'), "Couldn't read that file."); return; }
+    const err = tryLoad(text);
+    if (err) { showLoader(); showErr($('err'), err); }
+  }
+
+  /* ---------- views ---------- */
+  function showLoader() {
+    $('loader').hidden = false;
+    $('list').hidden = true;
+    $('quizUI').hidden = true;
+    $('filterEmpty').hidden = true;
+    $('err').hidden = true;
+    $('btnBack').hidden = !quiz;
+    $('score').textContent = '';
+    $('title').textContent = quiz ? quiz.title : 'Quiz Practice';
+  }
+  function showQuiz() {
+    $('loader').hidden = true;
+    $('list').hidden = false;
+    $('quizUI').hidden = false;
+    $('title').textContent = quiz.title;
+    document.title = quiz.title + ' · Quiz Practice';
+    renderList(); updateStats(); applyFilter();
+    window.scrollTo(0, 0);
+  }
+
+  function cardHTML(q, pos) {
+    const opts = q.options.map((o, i) => {
+      const ci = i % COLORS.length;
+      return `<button type="button" class="opt${ci === 2 ? ' dark' : ''}" data-oi="${o.oi}" style="--c:var(${COLORS[ci]})">` +
+        `<span class="letter">${LETTERS[i]}</span><span class="otext">${rich(o.text)}</span><span class="mark" aria-hidden="true"></span></button>`;
+    }).join('');
+    return `<article class="q" id="${q.id}" data-id="${q.id}">
+      <div class="q-head"><span class="q-num">Question ${pos + 1}</span><span class="q-badge"></span></div>
+      <div class="q-text">${rich(q.text)}</div>
+      <div class="opts">${opts}</div>
+      <div class="result" hidden></div>
+      <div class="q-foot">
+        <button type="button" class="btn primary reveal">Reveal answer</button>
+        <button type="button" class="btn retry" hidden>Try again</button>
+        <span class="hint">Pick an answer first</span>
+      </div>
+    </article>`;
+  }
+
+  function renderList() {
+    $('list').innerHTML = quiz.questions.map(cardHTML).join('');
+    quiz.questions.forEach(updateCard);
+  }
+
+  const correctOf = q => q.options.find(o => o.correct);
+  function status(q) {
+    const s = state[q.id] || {};
+    const revealed = !!s.revealed && s.picked != null;
+    return { picked: s.picked ?? null, revealed, right: revealed && s.picked === correctOf(q).oi };
+  }
+
+  function updateCard(q) {
+    const card = document.getElementById(q.id);
+    if (!card) return;
+    const { picked, revealed, right } = status(q);
+    const hasPick = picked != null;
+
+    card.classList.toggle('picked', hasPick);
+    card.classList.toggle('revealed', revealed);
+    card.classList.toggle('right', revealed && right);
+    card.classList.toggle('wrong', revealed && !right);
+
+    card.querySelectorAll('.opt').forEach(b => {
+      const oi = +b.dataset.oi;
+      const o = q.options.find(x => x.oi === oi);
+      const isPicked = oi === picked;
+      b.classList.toggle('is-picked', isPicked);
+      b.classList.toggle('is-correct', revealed && o.correct);
+      b.classList.toggle('is-wrong', revealed && isPicked && !o.correct);
+      b.setAttribute('aria-pressed', String(isPicked));
+      b.disabled = revealed;
+      b.querySelector('.mark').textContent = revealed ? (o.correct ? '✓' : (isPicked ? '✗' : '')) : '';
+    });
+
+    card.querySelector('.reveal').hidden = revealed;
+    card.querySelector('.reveal').disabled = !hasPick;
+    card.querySelector('.retry').hidden = !revealed;
+    card.querySelector('.hint').hidden = hasPick;
+
+    const badge = card.querySelector('.q-badge');
+    badge.textContent = revealed ? (right ? 'Correct' : 'Missed') : '';
+    badge.className = 'q-badge' + (revealed ? (right ? ' ok' : ' bad') : '');
+
+    const res = card.querySelector('.result');
+    if (revealed) {
+      const letter = LETTERS[q.options.indexOf(correctOf(q))];
+      res.innerHTML = `<div class="verdict">${right ? '✓ Correct!' : `✗ Not quite. The answer is <b>${letter}</b>.`}</div>` +
+        (q.explanation ? `<div class="expl">${rich(q.explanation)}</div>` : '');
+      res.hidden = false;
+    } else {
+      res.innerHTML = ''; res.hidden = true;
+    }
+  }
+
+  function updateStats() {
+    const total = quiz.questions.length;
+    let revealed = 0, right = 0;
+    quiz.questions.forEach(q => { const st = status(q); if (st.revealed) { revealed++; if (st.right) right++; } });
+    $('score').innerHTML = `<span><b>${right}</b> / ${revealed} correct</span><span>·</span><span>${revealed} of ${total} done</span>`;
+    $('bar').style.width = (total ? revealed / total * 100 : 0) + '%';
+    $('nTodo').textContent = total - revealed;
+    $('nMissed').textContent = revealed - right;
+  }
+
+  function applyFilter() {
+    document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.filter === filter));
+    let shown = 0;
+    quiz.questions.forEach(q => {
+      const st = status(q);
+      const show = filter === 'all' || (filter === 'todo' && !st.revealed) || (filter === 'missed' && st.revealed && !st.right);
+      document.getElementById(q.id).hidden = !show;
+      if (show) shown++;
+    });
+    const fe = $('filterEmpty');
+    fe.hidden = shown > 0;
+    fe.textContent = filter === 'todo' ? 'Nothing left to do. Every question is revealed.' : 'No missed questions. Nice work.';
+  }
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ---------- events ---------- */
+  $('list').addEventListener('click', e => {
+    const card = e.target.closest('.q');
+    if (!card) return;
+    const q = quiz.questions.find(x => x.id === card.dataset.id);
+    if (!q) return;
+    const s = state[q.id] || (state[q.id] = { picked: null, revealed: false });
+
+    const opt = e.target.closest('.opt');
+    if (opt) {
+      if (s.revealed) return;
+      const oi = +opt.dataset.oi;
+      s.picked = s.picked === oi ? null : oi;   // click again to un-pick
+    } else if (e.target.closest('.reveal')) {
+      if (s.picked == null) return;
+      s.revealed = true;
+    } else if (e.target.closest('.retry')) {
+      delete state[q.id];
+    } else {
+      return;
+    }
+    updateCard(q); updateStats(); save();
+  });
+
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.filter; applyFilter(); window.scrollTo(0, 0);
+  }));
+
+  $('btnShuffle').addEventListener('click', () => {
+    shuffle(quiz.questions); save(); renderList(); applyFilter(); window.scrollTo(0, 0);
+  });
+  $('btnReset').addEventListener('click', () => {
+    if (!confirm('Clear all your answers and restore the original order?')) return;
+    state = {}; filter = 'all';
+    quiz.questions.sort((a, b) => a.num - b.num);
+    save(); renderList(); updateStats(); applyFilter(); window.scrollTo(0, 0);
+  });
+  $('btnLoad').addEventListener('click', showLoader);
+  $('btnBack').addEventListener('click', showQuiz);
+
+  $('btnPick').addEventListener('click', () => $('file').click());
+  $('file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    e.target.value = '';                 // so re-picking the same (edited) file still fires
+    if (f) readFile(f);
+  });
+  $('btnSample').addEventListener('click', () => tryLoad(JSON.stringify(SAMPLE)));
+
+  $('btnPaste').addEventListener('click', () => {
+    $('pasteErr').hidden = true;
+    $('pasteDlg').showModal();
+    $('pasteBox').focus();
+  });
+  $('pasteGo').addEventListener('click', () => {
+    const text = $('pasteBox').value;
+    if (!text.trim()) { showErr($('pasteErr'), 'Paste some JSON first.'); return; }
+    const err = tryLoad(text);
+    if (err) showErr($('pasteErr'), err);
+    else { $('pasteDlg').close(); $('pasteBox').value = ''; }
+  });
+
+  // drag & drop a .json anywhere on the page
+  let depth = 0;
+  const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+  window.addEventListener('dragenter', e => { if (hasFiles(e)) { e.preventDefault(); depth++; document.body.classList.add('dragging'); } });
+  window.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener('dragleave', e => {
+    if (!hasFiles(e)) return;
+    depth = Math.max(0, depth - 1);
+    if (!depth) document.body.classList.remove('dragging');
+  });
+  window.addEventListener('drop', e => {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+    const f = e.dataTransfer.files[0];
+    if (f) readFile(f);
+  });
+
+  /* ---------- start ---------- */
+  if (restore()) showQuiz(); else showLoader();
+})();
+</script>
+</body>
+</html>
